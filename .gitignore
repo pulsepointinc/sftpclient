@@ -1,0 +1,6 @@
+.vscode/**
+deleteme*.*
+.noseids
+27
+*.egg-info
+**/*.pyc

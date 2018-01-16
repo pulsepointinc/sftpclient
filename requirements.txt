@@ -1,0 +1,5 @@
+nose
+sphinx
+paramiko==2.4.0
+sftpserver
+ssh2-python==0.8.0
