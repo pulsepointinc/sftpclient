@@ -45,7 +45,7 @@ class SFTPConn():
                 self.connect(host, port, username, password)
                 return self
             except:
-                logger.error("Error while connecting to sftp")
+                logger.error("Error while connecting to sftp. Will retry.")
                 retries += 1
                 time.sleep(1)
                 if retries > max_retries:
@@ -118,6 +118,7 @@ class SSH2PySFTPClient(SFTPClient):
             if fh != None:
                 return fh
             attempts = attempts + 1
+            logger.error("Error while opening sftp file handle. Will retry")
             time.sleep(1)
         raise ValueError('Could not obtain remote file handle')
 

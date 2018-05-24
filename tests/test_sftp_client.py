@@ -65,6 +65,23 @@ class SSH2PySFTPClientTest(SFTPClientTestBase, unittest.TestCase):
     def setUp(self):
         super(SSH2PySFTPClientTest, self).setUp()
         self.sftp_client = SSH2PySFTPClient(self.sftp_scaffolding.sftp_client_config)
+        
+class SSH2PyBrickftpTest(unittest.TestCase):
+    sftp_host = 'pulsepoint.brickftp.com'
+    sftp_port = 22
+    sftp_username = 'PPuser'
+    sftp_password = 'L8q@3TJ8orxr8m2'
+    sftp_dir_screen6 = '/Screen6/'
+
+    def test(self):
+        sftp_client = SSH2PySFTPClient(
+            SFTPClientConfig(host=self.sftp_host, port=self.sftp_port, username=self.sftp_username, password=self.sftp_password))
+        filecount = 0
+        with sftp_client:
+            for filename in sftp_client.ls(self.sftp_dir_screen6, recursive=True):
+                filecount += 1
+        assert filecount > 0
+
 
 if __name__ == '__main__':
     unittest.main()
