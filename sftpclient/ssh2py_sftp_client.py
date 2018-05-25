@@ -10,6 +10,7 @@ from .sftp_client import SFTPClient
 
 logger = logging.getLogger('ssh2py_sftp_client')
 
+
 class SFTPConn():
     def __init__(self):
         self.timeoutMs = 10000
@@ -90,7 +91,8 @@ class SSH2PySFTPClient(SFTPClient):
 
     def connect(self):
         if self._conn == None:
-            self._conn = SFTPConn().connect_with_retries(self.config.get_host(), self.config.get_port(), self.config.get_username(),
+            self._conn = SFTPConn().connect_with_retries(self.config.get_host(), self.config.get_port(),
+                                                         self.config.get_username(),
                                                          self.config.get_password(), self._retry_attempts)
         return self
 
