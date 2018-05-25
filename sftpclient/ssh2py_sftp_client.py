@@ -1,20 +1,27 @@
+import logging
 import socket
+import stat
+import time
 
-import time, stat
-
-from ssh2.session import Session
 from ssh2.error_codes import LIBSSH2_ERROR_EAGAIN
+from ssh2.session import Session
+
 from .sftp_client import SFTPClient
+
+logger = logging.getLogger('ssh2py_sftp_client')
 
 class SFTPConn():
     def __init__(self):
+        self.timeoutMs = 10000
         pass
+
     def connect(self, host, port, username, password):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
         try:
             ssh_session = Session()
             try:
+                ssh_session.set_timeout(self.timeoutMs)
                 ssh_session.handshake(sock)
                 ssh_session.userauth_password(username, password)
                 self._sftp_session = ssh_session.sftp_init()
@@ -24,10 +31,25 @@ class SFTPConn():
                 self._ssh_session = ssh_session
             except:
                 self._close_session(ssh_session)
+                raise
         except:
             self._close_socket(sock)
+            raise
 
         return self
+
+    def connect_with_retries(self, host, port, username, password, max_retries):
+        retries = 0
+        while retries <= max_retries:
+            try:
+                self.connect(host, port, username, password)
+                return self
+            except:
+                logger.error("Error while connecting to sftp. Will retry.")
+                retries += 1
+                time.sleep(1)
+                if retries > max_retries:
+                    raise
 
     def sftp(self):
         return self._sftp_session
@@ -37,7 +59,7 @@ class SFTPConn():
             session.disconnect()
         except:
             pass
-        
+
     def _close_socket(self, socket):
         try:
             socket.shutdown()
@@ -50,33 +72,35 @@ class SFTPConn():
 
     def close(self):
         if hasattr(self, '_sftp_session'):
-            del(self._sftp_session)
+            del (self._sftp_session)
         if hasattr(self, '_ssh_session'):
             self._ssh_session.set_blocking(True)
             self._close_session(self._ssh_session)
-            del(self._ssh_session)
+            del (self._ssh_session)
         if hasattr(self, '_socket'):
-            self._close_socket(self._socket);
-            del(self._socket)
+            self._close_socket(self._socket)
+            del (self._socket)
+
 
 class SSH2PySFTPClient(SFTPClient):
     def __init__(self, *args, **kwargs):
         super(SSH2PySFTPClient, self).__init__(*args, **kwargs)
         self._conn = None
-        self._retry_attempts = 10
+        self._retry_attempts = 20
 
     def connect(self):
         if self._conn == None:
-            self._conn = SFTPConn().connect(self.config.get_host(), self.config.get_port(), self.config.get_username(), self.config.get_password())
+            self._conn = SFTPConn().connect_with_retries(self.config.get_host(), self.config.get_port(), self.config.get_username(),
+                                                         self.config.get_password(), self._retry_attempts)
         return self
 
     def close(self):
         if self._conn != None:
             self._conn.close()
-            del(self._conn)
+            del (self._conn)
             self._conn = None
         return self
-    
+
     def _opendir_fh(self, dir):
         attempts = 0
         while attempts < self._retry_attempts:
@@ -94,11 +118,11 @@ class SSH2PySFTPClient(SFTPClient):
             if fh != None:
                 return fh
             attempts = attempts + 1
+            logger.error("Error while opening sftp file handle. Will retry")
             time.sleep(1)
         raise ValueError('Could not obtain remote file handle')
 
-
-    def ls(self, dir, recursive = False):
+    def ls(self, dir, recursive=False):
         ret = []
         fh = self._opendir_fh(dir)
         try:
@@ -118,7 +142,7 @@ class SSH2PySFTPClient(SFTPClient):
         finally:
             fh.close()
         return ret
-    
+
     def get(self, path, target):
         fh = self._open_path(path)
         try:
