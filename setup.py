@@ -16,7 +16,8 @@ setup(
     ],
     extras_require={
         'test': [
-            'nose',
+            'pytest',
+            'six',
         ]
     },
     zip_safe=False,
