@@ -1,17 +1,17 @@
 SYSTEM_PYTHON := $(shell which python2)
 VENV          := venv
-PYTHON        := $(VENV)/bin/python
-PIP           := $(VENV)/bin/python -m pip
+PIP           := pip
+NOSETESTS     := nosetests
 
 venv:
-	$(SYSTEM_PYTHON) -m virtualenv venv
+	$(SYSTEM_PYTHON) -m virtualenv $(VENV)
 	$(PIP) install --upgrade pip wheel
 
 .PHONY: install
-install: venv
+install:
 	$(PIP) install -r requirements.txt -c constraints.txt
 	$(PIP) install -e .[test]
 
 .PHONY: test
 test:
-	nosetests tests
+	$(NOSETESTS) tests
