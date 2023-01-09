@@ -1,5 +1,3 @@
-nose
-sphinx
-paramiko==2.4.0
+paramiko
 sftpserver
-ssh2-python==0.8.0
+ssh2-python
